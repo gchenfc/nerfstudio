@@ -29,9 +29,8 @@
       "source.organizeImports": true
     }
   },
-  "editor.formatOnSave": true,
+  "editor.formatOnSave": false,
   "python.envFile": "${workspaceFolder}/.env",
-  "python.formatting.provider": "black",
   "python.formatting.blackArgs": ["--line-length=120"],
   "python.linting.pylintEnabled": true,
   "python.linting.flake8Enabled": false,
@@ -121,5 +120,7 @@
     "__node_handle": "cpp"
   },
   "python.analysis.typeCheckingMode": "basic",
-  "python.analysis.diagnosticMode": "workspace"
+  "python.analysis.diagnosticMode": "workspace",
+  "python.formatting.provider": "yapf",
+  "python.linting.lintOnSave": true
 }

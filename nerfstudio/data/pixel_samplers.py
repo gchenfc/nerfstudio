@@ -92,8 +92,10 @@ class PixelSampler:  # pylint: disable=too-few-public-methods
             indices = self.sample_method(
                 num_rays_per_batch, num_images, image_height, image_width, mask=batch["mask"], device=device
             )
+            # print('MASKMASKMASK', num_images, num_rays_per_batch, indices.shape)
         else:
             indices = self.sample_method(num_rays_per_batch, num_images, image_height, image_width, device=device)
+            # print('nomask', num_images, num_rays_per_batch, indices.shape)
 
         c, y, x = (i.flatten() for i in torch.split(indices, 1, dim=-1))
         collated_batch = {
