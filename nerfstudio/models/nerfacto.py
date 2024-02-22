@@ -24,7 +24,8 @@ from typing import Dict, List, Tuple, Type
 import numpy as np
 import torch
 from torch.nn import Parameter
-from torchmetrics import PeakSignalNoiseRatio
+#from torchmetrics import PeakSignalNoiseRatio
+from torchmetrics.image import PeakSignalNoiseRatio
 from torchmetrics.functional import structural_similarity_index_measure
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 from typing_extensions import Literal
@@ -62,7 +63,6 @@ try:
 except ImportError:
     # tinycudann module doesn't exist
     pass
-
 
 @dataclass
 class NerfactoModelConfig(ModelConfig):
@@ -226,8 +226,8 @@ class NerfactoModel(Model):
         )
 
         # Collider
-        # self.collider = NearFarCollider(near_plane=self.config.near_plane, far_plane=self.config.far_plane)
-        # self.collider = NearFarCollider(near_plane=4, far_plane=7)
+        #self.collider = NearFarCollider(near_plane=self.config.near_plane, far_plane=self.config.far_plane)
+        #self.collider = NearFarCollider(near_plane=4, far_plane=7)
         self.collider = AABBBoxCollider(self.scene_box)
 
         # renderers
@@ -245,7 +245,7 @@ class NerfactoModel(Model):
         # metrics
         self.psnr = PeakSignalNoiseRatio(data_range=1.0)
         self.ssim = structural_similarity_index_measure
-        self.lpips = LearnedPerceptualImagePatchSimilarity()
+        self.lpips = LearnedPerceptualImagePatchSimilarity(normalize=True).to('cpu')
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
         param_groups = {}
@@ -499,10 +499,17 @@ class NerfactoModel(Model):
         self, outputs: Dict[str, torch.Tensor], batch: Dict[str, torch.Tensor]
     ) -> Tuple[Dict[str, float], Dict[str, torch.Tensor]]:
 
-        rgb_gt = batch["image"].to(self.device)
+        #rgb_gt = batch["image"].to(self.device)
+        #all tensors in outupts and batch are in cpu
+        for key in outputs:
+            outputs[key] = outputs[key].to('cpu')
+        for key in batch:
+            if key!='image_idx':
+                batch[key] = batch[key].to('cpu')
+        rgb_gt = batch["image"]
         rgb = outputs["rgb"] * 1.0
         if self.config.num_output_color_channels != 3:
-            image_gt = batch["hs_image"][..., outputs["wavelengths"]].to(self.device)
+            image_gt = batch["hs_image"][..., outputs["wavelengths"]].to('cpu')
             image = outputs["image"]
         else:
             image_gt = rgb_gt
@@ -527,13 +534,19 @@ class NerfactoModel(Model):
         n_wavelengths = self.config.num_output_color_channels
         eval_ch_inds = torch.arange(
             n_wavelengths,
-            device=self.device,
+            device='cpu',
             requires_grad=False,
         ).long()
         eval_ch_inds = eval_ch_inds[eval_ch_inds % self.config.train_wavelengths_every_nth != 0]
 
+        #Save image_gt and image for debugging
+
+
         psnr = self.psnr(image_gt, image)
         ssim = self.ssim(image_gt, image)
+        #Check device for rgb_gt and rgb
+        self.lpips.to(rgb_gt.device)
+        print(rgb_gt.device, rgb.device,self.lpips.device)
         lpips = self.lpips(rgb_gt, rgb)
 
         # all of these metrics will be logged as scalars
