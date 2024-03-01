@@ -146,10 +146,10 @@ class RenderThread(threading.Thread):
                             [color["r"] / 255.0, color["g"] / 255.0, color["b"] / 255.0], device=self.graph.device
                         )
                     with renderers.background_color_override_context(background_color), torch.no_grad():
-                        outputs = self.graph.get_outputs_for_camera_ray_bundle(self.camera_ray_bundle, override_wavelengths='rgb')
+                        outputs = self.graph.get_outputs_for_camera_ray_bundle(self.camera_ray_bundle, override_wavelengths='alt_rgb')
                 else:
                     with torch.no_grad():
-                        outputs = self.graph.get_outputs_for_camera_ray_bundle(self.camera_ray_bundle, override_wavelengths='rgb')
+                        outputs = self.graph.get_outputs_for_camera_ray_bundle(self.camera_ray_bundle, override_wavelengths='alt_rgb')
         except Exception as e:  # pylint: disable=broad-except
             self.exc = e
 

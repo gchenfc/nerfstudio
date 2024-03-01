@@ -124,6 +124,14 @@ class NerfactoModelConfig(ModelConfig):
     """For Hyperspectral, we may want to have a different number of output channels (RGB is 3)."""
     rgb_output_channels: Tuple[int, int, int] = (49, 36, 26)  # in nanometers: [620, 555, 503]
     """For Hyperspectral, we want to generate an RGB preview using these channels."""
+    alt_rgb_output_channels = [8, 18, 28, 38]
+    """An alternate method for converting hyperspectral images to rgb"""
+    alt_rgb_K = [[0.7730080007942016, 0.535533997779176, 0.6526651958156037],
+                [1.414780009790509, 2.065529433404396, 3.0438870954713138],
+                [1.4773863942703649, -0.8240144016241694, 1.933859631365789],
+                [-0.34568228643051996, 0.7522634529835492, -1.6587064231164854],
+                [-12.904164189025236, 8.095959165877666, -23.779234868708237]]
+    """An alternate method for converting hyperspectral images to rgb"""
     num_density_channels: int = 1
     """For wavelength-dependent transparency, we might want to have more density channels."""
     wavelength_style: InputWavelengthStyle = InputWavelengthStyle.NONE
@@ -495,18 +503,32 @@ class NerfactoModel(Model):
                 )
         return loss_dict
 
+    def hs2rgb(self, hs_image):
+        # rgb_inds = [8, 18, 28, 38]
+        # K = torch.Tensor([[0.7730080007942016, 0.535533997779176, 0.6526651958156037],
+        #                 [1.414780009790509, 2.065529433404396, 3.0438870954713138],
+        #                 [1.4773863942703649, -0.8240144016241694, 1.933859631365789],
+        #                 [-0.34568228643051996, 0.7522634529835492, -1.6587064231164854],
+        #                 [-12.904164189025236, 8.095959165877666, -23.779234868708237]]).to(device=hs_image.device)
+        rgb_inds = self.config.alt_rgb_output_channels
+        K = torch.tensor(self.config.alt_rgb_K, device=hs_image.device)
+        return (hs_image[:, :, rgb_inds] @ K[:-1, :] + K[-1] / 256.).clip(0, 1)
+
     def get_image_metrics_and_images(
         self, outputs: Dict[str, torch.Tensor], batch: Dict[str, torch.Tensor]
     ) -> Tuple[Dict[str, float], Dict[str, torch.Tensor]]:
 
-        rgb_gt = batch["image"].to(self.device)
-        rgb = outputs["rgb"] * 1.0
+        # rgb_gt = batch["image"].to(self.device)
+        # rgb = outputs["rgb"] * 1.0
         if self.config.num_output_color_channels != 3:
             image_gt = batch["hs_image"][..., outputs["wavelengths"]].to(self.device)
             image = outputs["image"]
         else:
             image_gt = rgb_gt
             image = rgb
+        rgb = self.hs2rgb(image)
+        rgb_gt = self.hs2rgb(image_gt)
+
         acc = colormaps.apply_colormap(torch.clamp(outputs["accumulation"], 0, 1))
         depth = colormaps.apply_depth_colormap(
             outputs["depth"],
@@ -577,7 +599,19 @@ class NerfactoModel(Model):
                 camera_ray_bundle.wavelengths = list(range(128))
             elif override_wavelengths == 'rgb':
                 camera_ray_bundle.wavelengths = self.config.rgb_output_channels
+            elif override_wavelengths == 'alt_rgb':
+                camera_ray_bundle.wavelengths = self.config.alt_rgb_output_channels
             else:
                 camera_ray_bundle.wavelengths = override_wavelengths
-        with torch.no_grad():
-            return super().get_outputs_for_camera_ray_bundle(camera_ray_bundle)
+        if override_wavelengths != 'alt_rgb':
+            with torch.no_grad():
+                return super().get_outputs_for_camera_ray_bundle(camera_ray_bundle)
+        else:
+            with torch.no_grad():
+                outputs = super().get_outputs_for_camera_ray_bundle(camera_ray_bundle)
+                if 'image' not in outputs:
+                    return outputs
+                outputs['rgb'] = self.hs2rgb(outputs['image'])
+                # K = torch.tensor(self.config.alt_rgb_K, device=outputs['rgb'].device)
+                # outputs['rgb'] = (outputs['image'] @ K[:-1, :] + K[-1] / 256.).clip(0, 1)
+                return outputs
