@@ -44,7 +44,7 @@ from nerfstudio.data.dataparsers.phototourism_dataparser import (
     PhototourismDataParserConfig,
 )
 from nerfstudio.engine.optimizers import AdamOptimizerConfig, RAdamOptimizerConfig
-from nerfstudio.engine.schedulers import SchedulerConfig
+from nerfstudio.engine.schedulers import SchedulerConfig, DelayedExponentialScheduler
 from nerfstudio.engine.trainer import TrainerConfig
 from nerfstudio.field_components.temporal_distortions import TemporalDistortionKind
 from nerfstudio.fields.nerfacto_field import InputWavelengthStyle
@@ -468,10 +468,10 @@ method_configs["iccv-2"] = TrainerConfig(
     method_name="iccv-2",
     steps_per_eval_batch=50,
     steps_per_eval_image=500,
-    steps_per_eval_all_images=25000,
+    steps_per_eval_all_images=75000,
     steps_per_save=5000,
     save_only_latest_checkpoint=False,
-    max_num_iterations=25001,
+    max_num_iterations=75001,
     mixed_precision=True,
     pipeline=VanillaPipelineConfig(
         datamanager=HyperspectralDataManagerConfig(
@@ -484,19 +484,26 @@ method_configs["iccv-2"] = TrainerConfig(
             # train_num_images_to_sample_from=32,  # This might be needed to not run out of GPU memory
             # train_num_times_to_repeat_images=250,
             # eval_num_images_to_sample_from=1,
+            train_num_images_to_sample_from=12,  # This might be needed to not run out of GPU memory
+            train_num_times_to_repeat_images=250,
+            eval_num_images_to_sample_from=1,
         ),
-        model=NerfactoModelConfig(eval_num_rays_per_chunk=1 << 15,
+        model=NerfactoModelConfig(eval_num_rays_per_chunk=2048,
                                   num_output_color_channels=128,
                                   num_density_channels=128),
     ),
     optimizers={
         "proposal_networks": {
-            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
+            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
             "scheduler": None,
+            # "scheduler": SchedulerConfig(_target=lambda *args: DelayedExponentialScheduler(*args, delay_epochs=40000), lr_final=1e-5, max_steps=20000),
+            "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
         },
         "fields": {
-            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
+            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
             "scheduler": None,
+            # "scheduler": SchedulerConfig(_target=lambda *args: DelayedExponentialScheduler(*args, delay_epochs=40000), lr_final=1e-5, max_steps=20000),
+            "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
         },
     },
     viewer=ViewerConfig(num_rays_per_chunk=1 << 15),
