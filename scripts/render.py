@@ -107,7 +107,7 @@ def _render_trajectory_video(
                     aabb_box = SceneBox(torch.stack([bounding_box_min, bounding_box_max]).to(pipeline.device))
                 camera_ray_bundle = cameras.generate_rays(camera_indices=camera_idx, aabb_box=aabb_box)
 
-                color_override = 'rgb'
+                color_override = 'alt_rgb'
                 if force_color_channels is not None:
                     color_override = force_color_channels
                 elif cameras.color_channels is not None:

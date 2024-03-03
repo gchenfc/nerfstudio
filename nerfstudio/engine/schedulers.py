@@ -91,7 +91,7 @@ class DelayerScheduler(lr_scheduler.LambdaLR):
                     multiplier = after_scheduler.lr_lambdas[0](step - delay_epochs)  # type: ignore
                     return multiplier
                 return 1.0
-            return 0.0
+            return 1.0
 
         super().__init__(optimizer, lr_lambda=func)
 
