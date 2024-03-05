@@ -419,6 +419,8 @@ method_configs["camera_pose_refinement_2"] = TrainerConfig(  # Approach 2, for R
     vis="viewer wandb",
 )
 
+rgb_FAKEPLANT2_1_opts = dict(alt_rgb_output_channels = [8, 18, 28, 38],
+                            alt_rgb_K = [[-1.5667851414218577, -0.9032670444903832, -0.4478717135574679], [4.642370969818683, 5.450943177007793, 4.285684621863303], [0.1556300024054767, -1.1439231019351823, -1.013424691790784], [-1.2682035750881924, -0.8768960254324378, -0.4777769323656595], [-11.946178181886047, -33.92005744605718, -31.52853660412115]])
 
 method_configs["iccv-1"] = TrainerConfig(
     method_name="iccv-1",
@@ -445,7 +447,9 @@ method_configs["iccv-1"] = TrainerConfig(
         model=NerfactoModelConfig(eval_num_rays_per_chunk=2048,
                                 #   train_num_rays_per_chunk=2048,
                                   train_num_rays_per_chunk=99999999,
-                                  num_output_color_channels=128),
+                                  num_output_color_channels=128,
+                                  **rgb_FAKEPLANT2_1_opts
+                                  ),
     ),
     optimizers={
         "proposal_networks": {
