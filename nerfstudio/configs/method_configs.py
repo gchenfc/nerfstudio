@@ -421,6 +421,8 @@ method_configs["camera_pose_refinement_2"] = TrainerConfig(  # Approach 2, for R
 
 rgb_FAKEPLANT2_1_opts = dict(alt_rgb_output_channels = [8, 18, 28, 38],
                             alt_rgb_K = [[-1.5667851414218577, -0.9032670444903832, -0.4478717135574679], [4.642370969818683, 5.450943177007793, 4.285684621863303], [0.1556300024054767, -1.1439231019351823, -1.013424691790784], [-1.2682035750881924, -0.8768960254324378, -0.4777769323656595], [-11.946178181886047, -33.92005744605718, -31.52853660412115]])
+rgb_opts = rgb_FAKEPLANT2_1_opts
+# rgb_opts = {}
 
 method_configs["iccv-1"] = TrainerConfig(
     method_name="iccv-1",
@@ -446,9 +448,9 @@ method_configs["iccv-1"] = TrainerConfig(
         ),
         model=NerfactoModelConfig(eval_num_rays_per_chunk=2048,
                                 #   train_num_rays_per_chunk=2048,
-                                  train_num_rays_per_chunk=99999999,
+                                #   train_num_rays_per_chunk=99999999,
                                   num_output_color_channels=128,
-                                  **rgb_FAKEPLANT2_1_opts
+                                  **rgb_opts
                                   ),
     ),
     optimizers={
@@ -494,7 +496,9 @@ method_configs["iccv-2"] = TrainerConfig(
         ),
         model=NerfactoModelConfig(eval_num_rays_per_chunk=2048,
                                   num_output_color_channels=128,
-                                  num_density_channels=128),
+                                  num_density_channels=128,
+                                  **rgb_opts,
+                                  ),
     ),
     optimizers={
         "proposal_networks": {
@@ -552,7 +556,9 @@ method_configs["iccv-3"] = TrainerConfig(
                                   num_wavelength_samples_per_batch=8,
                                   wavelength_style=InputWavelengthStyle.BEFORE_BASE,
                                   num_wavelength_encoding_freqs=8,
-                                  train_wavelengths_every_nth=1),
+                                  train_wavelengths_every_nth=1,
+                                  **rgb_opts,
+                                  ),
     ),
     optimizers={
         "proposal_networks": {
@@ -608,8 +614,9 @@ method_configs["iccv-4"] = TrainerConfig(
                                   num_wavelength_samples_per_batch=12,
                                   wavelength_style=InputWavelengthStyle.AFTER_BASE,
                                   num_wavelength_encoding_freqs=4,
-                                  train_wavelengths_every_nth=2,
-                                  geo_feat_dim=15),
+                                  geo_feat_dim=15,
+                                  **rgb_opts,
+                                  ),
     ),
     optimizers={
         "proposal_networks": {
@@ -669,7 +676,9 @@ method_configs["iccv-5"] = TrainerConfig(
                                   num_wavelength_samples_per_batch=6,
                                   wavelength_style=InputWavelengthStyle.NONE,
                                   num_wavelength_encoding_freqs=8,
-                                  train_wavelengths_every_nth=2),
+                                  train_wavelengths_every_nth=2,
+                                  **rgb_opts,
+                                  ),
     ),
     optimizers={
         "proposal_networks": {

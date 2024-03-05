@@ -124,13 +124,13 @@ class NerfactoModelConfig(ModelConfig):
     """For Hyperspectral, we may want to have a different number of output channels (RGB is 3)."""
     rgb_output_channels: Tuple[int, int, int] = (49, 36, 26)  # in nanometers: [620, 555, 503]
     """For Hyperspectral, we want to generate an RGB preview using these channels."""
-    alt_rgb_output_channels = [8, 18, 28, 38]
+    alt_rgb_output_channels: List[int] = tuple([8, 18, 28, 38])
     """An alternate method for converting hyperspectral images to rgb"""
-    alt_rgb_K = [[0.7730080007942016, 0.535533997779176, 0.6526651958156037],
-                [1.414780009790509, 2.065529433404396, 3.0438870954713138],
-                [1.4773863942703649, -0.8240144016241694, 1.933859631365789],
-                [-0.34568228643051996, 0.7522634529835492, -1.6587064231164854],
-                [-12.904164189025236, 8.095959165877666, -23.779234868708237]]
+    alt_rgb_K : List[List[float]] = ((0.7730080007942016, 0.535533997779176, 0.6526651958156037),
+                                     (1.414780009790509, 2.065529433404396, 3.0438870954713138),
+                                     (1.4773863942703649, -0.8240144016241694, 1.933859631365789),
+                                     (-0.34568228643051996, 0.7522634529835492, -1.6587064231164854),
+                                     (-12.904164189025236, 8.095959165877666, -23.779234868708237))
     """An alternate method for converting hyperspectral images to rgb"""
     num_density_channels: int = 1
     """For wavelength-dependent transparency, we might want to have more density channels."""
