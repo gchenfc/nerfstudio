@@ -576,10 +576,10 @@ method_configs["iccv-3"] = TrainerConfig(
     # vis="wandb",
 )
 
-method_configs["iccv-4"] = TrainerConfig(
+method_configs["iccv-4a"] = TrainerConfig(
     method_name="iccv-4",
-    steps_per_eval_batch=499,
-    steps_per_eval_image=5000,
+    steps_per_eval_batch=50,
+    steps_per_eval_image=500,
     steps_per_eval_all_images=25000,
     # steps_per_eval_all_images=1000,
     steps_per_save=2500,
@@ -594,38 +594,109 @@ method_configs["iccv-4"] = TrainerConfig(
             #  25 channels - 23GB <- better use 24 channels to be safe, in case batches overflow
             # 1 GPU:
             #  25 channels - 21GB
-            dataparser=NerfstudioDataParserConfig(num_hyperspectral_channels=128),
+            dataparser=NerfstudioDataParserConfig(
+                num_hyperspectral_channels=128,
+                # train_split_percentage=0.99
+            ),
             # train_num_rays_per_batch=4096 // 64,
             train_num_rays_per_batch=4096,
             eval_num_rays_per_batch=4096 // 32,
             # IMPORTANT - to resume a run, use CLI arg --pipeline.datamanager.camera-optimizer.optimizer.lr "5e-6"
-            camera_optimizer=CameraOptimizerConfig(mode="SO3xR3",
+            camera_optimizer=CameraOptimizerConfig(mode="off", #"SO3xR3",
                                                    optimizer=AdamOptimizerConfig(
                                                        lr=6e-4, eps=1e-8, weight_decay=1e-2)),
-            # train_num_images_to_sample_from=24,  # This might be needed to not run out of GPU memory
-            # train_num_times_to_repeat_images=250,
-            # eval_num_images_to_sample_from=1,
+            train_num_images_to_sample_from=32,  # This might be needed to not run out of GPU memory
+            train_num_times_to_repeat_images=50,
+            eval_num_images_to_sample_from=1,
         ),
-        model=NerfactoModelConfig(eval_num_rays_per_chunk=1 << 8,
+        model=NerfactoModelConfig(eval_num_rays_per_chunk=1 << 10,
                                   num_output_color_channels=128,
                                   proposal_wavelength_use=False,
                                 #   num_output_color_channels=24,
                                   num_density_channels=1,
-                                  num_wavelength_samples_per_batch=12,
+                                  num_wavelength_samples_per_batch=16,
                                   wavelength_style=InputWavelengthStyle.AFTER_BASE,
+                                  density_depends_on_wavelength=False,
                                   num_wavelength_encoding_freqs=4,
+                                  train_wavelengths_every_nth=8,
                                   geo_feat_dim=15,
                                   **rgb_opts,
                                   ),
     ),
     optimizers={
         "proposal_networks": {
-            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, weight_decay=1e-6),
-            "scheduler": None,
+            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+            # "scheduler": None,
+            "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
         },
         "fields": {
-            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, weight_decay=1e-6),
-            "scheduler": None,
+            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+            # "scheduler": None,
+            "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
+        },
+    },
+    viewer=ViewerConfig(num_rays_per_chunk=1 << 14),
+    # vis="viewer",  # wandb
+    vis="wandb",
+    # vis="wandb",
+)
+
+method_configs["iccv-4"] = TrainerConfig(
+    method_name="iccv-4",
+    steps_per_eval_batch=50,
+    steps_per_eval_image=500,
+    steps_per_eval_all_images=25000,
+    # steps_per_eval_all_images=1000,
+    steps_per_save=2500,
+    save_only_latest_checkpoint=False,
+    max_num_iterations=25001,
+    mixed_precision=True,
+    pipeline=VanillaPipelineConfig(
+        datamanager=HyperspectralDataManagerConfig(
+            # 2 GPUs:
+            #  16 channels - 17GB
+            #  22 channels - 21GB
+            #  25 channels - 23GB <- better use 24 channels to be safe, in case batches overflow
+            # 1 GPU:
+            #  25 channels - 21GB
+            dataparser=NerfstudioDataParserConfig(
+                num_hyperspectral_channels=128,
+                # train_split_percentage=0.99
+            ),
+            # train_num_rays_per_batch=4096 // 64,
+            train_num_rays_per_batch=4096,
+            eval_num_rays_per_batch=4096 // 32,
+            # IMPORTANT - to resume a run, use CLI arg --pipeline.datamanager.camera-optimizer.optimizer.lr "5e-6"
+            camera_optimizer=CameraOptimizerConfig(mode="off", #"SO3xR3",
+                                                   optimizer=AdamOptimizerConfig(
+                                                       lr=6e-4, eps=1e-8, weight_decay=1e-2)),
+            train_num_images_to_sample_from=32,  # This might be needed to not run out of GPU memory
+            train_num_times_to_repeat_images=50,
+            eval_num_images_to_sample_from=1,
+        ),
+        model=NerfactoModelConfig(eval_num_rays_per_chunk=1 << 11,
+                                  num_output_color_channels=128,
+                                  proposal_wavelength_use=False,
+                                #   num_output_color_channels=24,
+                                  num_density_channels=1,
+                                  num_wavelength_samples_per_batch=16,
+                                  wavelength_style=InputWavelengthStyle.AFTER_BASE,
+                                  num_wavelength_encoding_freqs=4,
+                                  train_wavelengths_every_nth=8,
+                                  geo_feat_dim=15,
+                                  **rgb_opts,
+                                  ),
+    ),
+    optimizers={
+        "proposal_networks": {
+            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+            # "scheduler": None,
+            "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
+        },
+        "fields": {
+            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+            # "scheduler": None,
+            "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
         },
     },
     viewer=ViewerConfig(num_rays_per_chunk=1 << 14),

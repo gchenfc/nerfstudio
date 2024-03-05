@@ -126,6 +126,7 @@ class TCNNNerfactoField(Field):
         num_output_color_channels: int = 3,
         num_output_density_channels: int = 1,
         wavelength_style: InputWavelengthStyle = InputWavelengthStyle.NONE,
+        density_depends_on_wavelength: bool = True,  # only does anything when wavelength_style=AFTER
         num_wavelength_encoding_freqs: int = 2,
     ) -> None:
         super().__init__()
@@ -170,7 +171,7 @@ class TCNNNerfactoField(Field):
         if wavelength_style == InputWavelengthStyle.INSIDE_BASE:
             raise NotImplementedError("Wavelength style not implemented")
         in_dims = 4 if (wavelength_style == InputWavelengthStyle.BEFORE_BASE) else 3
-        out_dims = self.geo_feat_dim + (0 if wavelength_style == InputWavelengthStyle.AFTER_BASE
+        out_dims = self.geo_feat_dim + (0 if (wavelength_style == InputWavelengthStyle.AFTER_BASE and density_depends_on_wavelength)
                                         else num_output_density_channels)
         self.mlp_base = tcnn.NetworkWithInputEncoding(
             n_input_dims=in_dims,
@@ -244,7 +245,7 @@ class TCNNNerfactoField(Field):
             self.field_head_pred_normals = PredNormalsFieldHead(in_dim=self.mlp_pred_normals.n_output_dims)
 
         self.density_head = tcnn.Network(
-            n_input_dims=self.geo_feat_dim + self.wavelength_encoding.n_output_dims,
+            n_input_dims=self.geo_feat_dim + (self.wavelength_encoding.n_output_dims if density_depends_on_wavelength else 0),
             n_output_dims=num_output_density_channels,
             network_config={
                 "otype": "FullyFusedMLP",
@@ -254,6 +255,7 @@ class TCNNNerfactoField(Field):
                 "n_hidden_layers": num_layers_density - 1,
             }
         )
+        self.density_depends_on_wavelength = density_depends_on_wavelength
 
         # nout = (num_output_color_channels if wavelength_style == InputWavelengthStyle.NONE else 1) + \
         #        (num_output_density_channels if wavelength_style == InputWavelengthStyle.AFTER_BASE else 0)
@@ -332,7 +334,7 @@ class TCNNNerfactoField(Field):
             # h = h.view(n_wavelengths, *density.shape)
         else:
             h = self.mlp_base(positions_flat).view(*ray_samples.frustums.shape, -1)
-        if self.wavelength_style == InputWavelengthStyle.AFTER_BASE:
+        if (self.wavelength_style == InputWavelengthStyle.AFTER_BASE) and (self.density_depends_on_wavelength):
             if ray_samples.metadata is not None and "wavelengths" in ray_samples.metadata:
                 raise Exception("not right")
                 wavelength_encodings = self.wavelength_encoding(ray_samples.metadata["wavelengths"].reshape(-1, 1))
@@ -438,7 +440,14 @@ class TCNNNerfactoField(Field):
 
         if self.wavelength_style == InputWavelengthStyle.AFTER_BASE and ("wavelengths" not in ray_samples.metadata):
             d = d[:, None, :].expand((d.shape[0], len(ray_samples.wavelengths), d.shape[-1]))
-            density_embedding = density_embedding.view(-1, len(ray_samples.wavelengths), density_embedding.shape[-1])
+            if not self.density_depends_on_wavelength:
+                density_embedding = density_embedding.view(-1, 1, density_embedding.shape[-1]).expand(-1, len(ray_samples.wavelengths), -1)
+                wavelength_encodings = self.wavelength_encoding(ray_samples.wavelengths.view(-1, 1))
+                y = wavelength_encodings[None, :, :].broadcast_to(
+                        (*density_embedding.shape[:-1], self.wavelength_encoding.n_output_dims))
+                density_embedding = torch.cat([density_embedding, y], dim=-1)
+            else:
+                density_embedding = density_embedding.view(-1, len(ray_samples.wavelengths), density_embedding.shape[-1])
             embedded_appearance = embedded_appearance.view(-1, self.appearance_embedding_dim)
             embedded_appearance = embedded_appearance[:, None, :].expand((embedded_appearance.shape[0], len(ray_samples.wavelengths), embedded_appearance.shape[-1]))
             h = torch.cat([d, density_embedding, embedded_appearance], dim=-1).view(-1, self.mlp_head.n_input_dims)

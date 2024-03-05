@@ -136,6 +136,8 @@ class NerfactoModelConfig(ModelConfig):
     """For wavelength-dependent transparency, we might want to have more density channels."""
     wavelength_style: InputWavelengthStyle = InputWavelengthStyle.NONE
     """Sets how to use the input wavelength."""
+    density_depends_on_wavelength: bool = True
+    """When wavelength_style is AFTER, setting this to False makes density not-dependent on wavelength"""
     num_wavelength_encoding_freqs: int = 2
     """Number of frequencies to use for the wavelength encoding."""
     proposal_wavelength_use: bool = False
@@ -177,6 +179,7 @@ class NerfactoModel(Model):
             num_output_color_channels=self.config.num_output_color_channels if not self.config.proposal_wavelength_use else 1,
             num_output_density_channels=self.config.num_density_channels,
             wavelength_style=self.config.wavelength_style,
+            density_depends_on_wavelength=self.config.density_depends_on_wavelength,
             num_wavelength_encoding_freqs=self.config.num_wavelength_encoding_freqs,
             geo_feat_dim=self.config.geo_feat_dim,
         )
@@ -346,7 +349,10 @@ class NerfactoModel(Model):
         n_ch, ray_samples.wavelengths = self.get_wavelengths(override_wavelengths)
         # execute forward pass and squeeze outputs
         field_outputs = self.field(ray_samples, compute_normals=self.config.predict_normals)
-        field_outputs[FieldHeadNames.DENSITY] = field_outputs[FieldHeadNames.DENSITY].view(*ray_samples.frustums.shape, n_ch)
+        if self.config.density_depends_on_wavelength:
+            field_outputs[FieldHeadNames.DENSITY] = field_outputs[FieldHeadNames.DENSITY].view(*ray_samples.frustums.shape, n_ch)
+        else:
+            field_outputs[FieldHeadNames.DENSITY] = field_outputs[FieldHeadNames.DENSITY].view(*ray_samples.frustums.shape, 1).expand(*ray_samples.frustums.shape, n_ch)
         field_outputs[FieldHeadNames.RGB] = field_outputs[FieldHeadNames.RGB].view(*ray_samples.frustums.shape, n_ch)
         return field_outputs
 
