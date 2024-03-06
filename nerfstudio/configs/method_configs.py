@@ -441,8 +441,8 @@ method_configs["iccv-1"] = TrainerConfig(
             camera_optimizer=CameraOptimizerConfig(mode="off",
                                                    optimizer=AdamOptimizerConfig(
                                                        lr=6e-4, eps=1e-8, weight_decay=1e-2)),
-            train_num_images_to_sample_from=16,  # This might be needed to not run out of GPU memory
-            train_num_times_to_repeat_images=250,
+            train_num_images_to_sample_from=32,  # This might be needed to not run out of GPU memory
+            train_num_times_to_repeat_images=50,
             eval_num_images_to_sample_from=1,
             # eval_num_times_to_repeat_images=-1
         ),
@@ -455,14 +455,14 @@ method_configs["iccv-1"] = TrainerConfig(
     ),
     optimizers={
         "proposal_networks": {
-            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
+            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15, amsgrad=True),
             # "scheduler": None,
-            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=20000),
+            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
         "fields": {
-            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
+            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15, amsgrad=True),
             "scheduler": None,
-            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=20000),
+            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
     },
     viewer=ViewerConfig(num_rays_per_chunk=1 << 15),
