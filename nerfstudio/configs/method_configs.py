@@ -455,12 +455,12 @@ method_configs["iccv-1"] = TrainerConfig(
     ),
     optimizers={
         "proposal_networks": {
-            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15, amsgrad=True),
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
             # "scheduler": None,
             "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
         "fields": {
-            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15, amsgrad=True),
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
             "scheduler": None,
             "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
@@ -474,10 +474,10 @@ method_configs["iccv-2"] = TrainerConfig(
     method_name="iccv-2",
     steps_per_eval_batch=50,
     steps_per_eval_image=500,
-    steps_per_eval_all_images=75000,
+    steps_per_eval_all_images=25000,
     steps_per_save=5000,
     save_only_latest_checkpoint=False,
-    max_num_iterations=75001,
+    max_num_iterations=25002,
     mixed_precision=True,
     pipeline=VanillaPipelineConfig(
         datamanager=HyperspectralDataManagerConfig(
@@ -490,8 +490,8 @@ method_configs["iccv-2"] = TrainerConfig(
             # train_num_images_to_sample_from=32,  # This might be needed to not run out of GPU memory
             # train_num_times_to_repeat_images=250,
             # eval_num_images_to_sample_from=1,
-            train_num_images_to_sample_from=12,  # This might be needed to not run out of GPU memory
-            train_num_times_to_repeat_images=250,
+            train_num_images_to_sample_from=32,  # This might be needed to not run out of GPU memory
+            train_num_times_to_repeat_images=50,
             eval_num_images_to_sample_from=1,
         ),
         model=NerfactoModelConfig(eval_num_rays_per_chunk=2048,
@@ -502,16 +502,18 @@ method_configs["iccv-2"] = TrainerConfig(
     ),
     optimizers={
         "proposal_networks": {
-            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
             "scheduler": None,
             # "scheduler": SchedulerConfig(_target=lambda *args: DelayedExponentialScheduler(*args, delay_epochs=40000), lr_final=1e-5, max_steps=20000),
-            "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
+            # "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
+            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
         "fields": {
-            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
             "scheduler": None,
             # "scheduler": SchedulerConfig(_target=lambda *args: DelayedExponentialScheduler(*args, delay_epochs=40000), lr_final=1e-5, max_steps=20000),
-            "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
+            # "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
+            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
     },
     viewer=ViewerConfig(num_rays_per_chunk=1 << 15),
@@ -523,12 +525,12 @@ method_configs["iccv-2"] = TrainerConfig(
 method_configs["iccv-3"] = TrainerConfig(
     method_name="iccv-3",
     steps_per_eval_batch=50,
-    steps_per_eval_image=5000,
+    steps_per_eval_image=500,
     steps_per_eval_all_images=25000,
     # steps_per_eval_all_images=1000,
     steps_per_save=2500,
     save_only_latest_checkpoint=False,
-    max_num_iterations=25001,
+    max_num_iterations=25002,
     mixed_precision=True,
     pipeline=VanillaPipelineConfig(
         datamanager=HyperspectralDataManagerConfig(
@@ -545,15 +547,15 @@ method_configs["iccv-3"] = TrainerConfig(
             camera_optimizer=CameraOptimizerConfig(mode="off",
                                                    optimizer=AdamOptimizerConfig(
                                                        lr=6e-4, eps=1e-8, weight_decay=1e-2)),
-            # train_num_images_to_sample_from=10,  # This might be needed to not run out of GPU memory
-            # train_num_times_to_repeat_images=250,
-            # eval_num_images_to_sample_from=1,
+            train_num_images_to_sample_from=24,  # This might be needed to not run out of GPU memory
+            train_num_times_to_repeat_images=50,
+            eval_num_images_to_sample_from=1,
         ),
         model=NerfactoModelConfig(eval_num_rays_per_chunk=1 << 9,
                                   num_output_color_channels=128,
                                 #   num_output_color_channels=24,
                                   num_density_channels=1,
-                                  num_wavelength_samples_per_batch=8,
+                                  num_wavelength_samples_per_batch=16,
                                   wavelength_style=InputWavelengthStyle.BEFORE_BASE,
                                   num_wavelength_encoding_freqs=8,
                                   train_wavelengths_every_nth=1,
@@ -562,12 +564,14 @@ method_configs["iccv-3"] = TrainerConfig(
     ),
     optimizers={
         "proposal_networks": {
-            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
-            "scheduler": None,
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
+            # "scheduler": None,
+            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
         "fields": {
-            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
-            "scheduler": None,
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
+            # "scheduler": None,
+            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
     },
     viewer=ViewerConfig(num_rays_per_chunk=1 << 14),
@@ -577,7 +581,7 @@ method_configs["iccv-3"] = TrainerConfig(
 )
 
 method_configs["iccv-4a"] = TrainerConfig(
-    method_name="iccv-4",
+    method_name="iccv-4a",
     steps_per_eval_batch=50,
     steps_per_eval_image=500,
     steps_per_eval_all_images=25000,
@@ -618,21 +622,21 @@ method_configs["iccv-4a"] = TrainerConfig(
                                   wavelength_style=InputWavelengthStyle.AFTER_BASE,
                                   density_depends_on_wavelength=False,
                                   num_wavelength_encoding_freqs=4,
-                                  train_wavelengths_every_nth=8,
+                                  train_wavelengths_every_nth=1,
                                   geo_feat_dim=15,
                                   **rgb_opts,
                                   ),
     ),
     optimizers={
         "proposal_networks": {
-            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
             # "scheduler": None,
-            "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
+            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
         "fields": {
-            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
             # "scheduler": None,
-            "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
+            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
     },
     viewer=ViewerConfig(num_rays_per_chunk=1 << 14),
@@ -674,7 +678,7 @@ method_configs["iccv-4"] = TrainerConfig(
             train_num_times_to_repeat_images=50,
             eval_num_images_to_sample_from=1,
         ),
-        model=NerfactoModelConfig(eval_num_rays_per_chunk=1 << 11,
+        model=NerfactoModelConfig(eval_num_rays_per_chunk=1 << 10,
                                   num_output_color_channels=128,
                                   proposal_wavelength_use=False,
                                 #   num_output_color_channels=24,
@@ -682,21 +686,21 @@ method_configs["iccv-4"] = TrainerConfig(
                                   num_wavelength_samples_per_batch=16,
                                   wavelength_style=InputWavelengthStyle.AFTER_BASE,
                                   num_wavelength_encoding_freqs=4,
-                                  train_wavelengths_every_nth=8,
+                                  train_wavelengths_every_nth=1,
                                   geo_feat_dim=15,
                                   **rgb_opts,
                                   ),
     ),
     optimizers={
         "proposal_networks": {
-            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
             # "scheduler": None,
-            "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
+            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
         "fields": {
-            "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
             # "scheduler": None,
-            "scheduler": SchedulerConfig(lr_final=1e-5, max_steps=60000),
+            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
     },
     viewer=ViewerConfig(num_rays_per_chunk=1 << 14),
@@ -708,7 +712,7 @@ method_configs["iccv-4"] = TrainerConfig(
 method_configs["iccv-5"] = TrainerConfig(
     method_name="iccv-5",
     steps_per_eval_batch=50,
-    steps_per_eval_image=5000,
+    steps_per_eval_image=500,
     steps_per_eval_all_images=25000,
     # steps_per_eval_all_images=1000,
     steps_per_save=2500,
@@ -736,7 +740,7 @@ method_configs["iccv-5"] = TrainerConfig(
                                                    optimizer=AdamOptimizerConfig(
                                                        lr=6e-4, eps=1e-8, weight_decay=1e-2)),
             train_num_images_to_sample_from=10,  # This might be needed to not run out of GPU memory
-            train_num_times_to_repeat_images=250,
+            train_num_times_to_repeat_images=50,
             # eval_num_images_to_sample_from=1,
         ),
         model=NerfactoModelConfig(eval_num_rays_per_chunk=1 << 9,
@@ -753,12 +757,14 @@ method_configs["iccv-5"] = TrainerConfig(
     ),
     optimizers={
         "proposal_networks": {
-            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
-            "scheduler": None,
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
+            # "scheduler": None,
+            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
         "fields": {
-            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
-            "scheduler": None,
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15, amsgrad=True),
+            # "scheduler": None,
+            "scheduler": SchedulerConfig(lr_final=1e-4, max_steps=25000),
         },
     },
     viewer=ViewerConfig(num_rays_per_chunk=1 << 14),
