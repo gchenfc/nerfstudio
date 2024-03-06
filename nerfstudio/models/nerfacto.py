@@ -73,7 +73,7 @@ class NerfactoModelConfig(ModelConfig):
     """How far along the ray to start sampling."""
     far_plane: float = 1000.0
     """How far along the ray to stop sampling."""
-    background_color: Literal["random", "last_sample"] = "white"
+    background_color: Literal["random", "last_sample", "black", "white"] = "white"
     """Whether to randomize the background color."""
     num_levels: int = 16
     """Number of levels of the hashmap for the base mlp."""
@@ -524,16 +524,16 @@ class NerfactoModel(Model):
         self, outputs: Dict[str, torch.Tensor], batch: Dict[str, torch.Tensor]
     ) -> Tuple[Dict[str, float], Dict[str, torch.Tensor]]:
 
-        # rgb_gt = batch["image"].to(self.device)
-        # rgb = outputs["rgb"] * 1.0
         if self.config.num_output_color_channels != 3:
             image_gt = batch["hs_image"][..., outputs["wavelengths"]].to(self.device)
             image = outputs["image"]
+            rgb = self.hs2rgb(image)
+            rgb_gt = self.hs2rgb(image_gt)
         else:
+            rgb_gt = batch["image"].to(self.device)
+            rgb = outputs["rgb"] * 1.0
             image_gt = rgb_gt
             image = rgb
-        rgb = self.hs2rgb(image)
-        rgb_gt = self.hs2rgb(image_gt)
 
         acc = colormaps.apply_colormap(torch.clamp(outputs["accumulation"], 0, 1))
         depth = colormaps.apply_depth_colormap(

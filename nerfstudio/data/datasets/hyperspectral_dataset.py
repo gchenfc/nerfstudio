@@ -47,7 +47,7 @@ class HyperspectralDataset(InputDataset):
         width = int(self._dataparser_outputs.cameras.width[data["image_idx"]])
 
         hs_image = torch.load(filepath)[:, :, :128]  # TODO(gerry): use all 141 channels
-        assert hs_image.shape == (height, width, 128), "HS image has incorrect shape"
+        assert hs_image.shape == (height, width, 128), f"HS image has incorrect shape: {hs_image.shape}"
         assert hs_image.dtype == torch.uint8, "HS image has incorrect dtype"
         if self._dataparser_outputs.num_hyperspectral_channels != -1:
             n = 128
