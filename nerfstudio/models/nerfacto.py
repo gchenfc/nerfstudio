@@ -562,7 +562,15 @@ class NerfactoModel(Model):
 
         psnr = self.psnr(image_gt, image)
         ssim = self.ssim(image_gt, image)
-        lpips = self.lpips(rgb_gt, rgb)
+        try:
+            lpips = self.lpips(rgb_gt, rgb)
+        except ValueError as e:
+            print("LPIPS failed, using nan")
+            print(e)
+            import traceback
+            traceback.print_exc()
+            print("-----")
+            lpips = float("nan")
 
         # all of these metrics will be logged as scalars
         metrics_dict = {"psnr": float(psnr.item()), "ssim": float(ssim)}  # type: ignore

@@ -423,7 +423,11 @@ class Trainer:
 
         # all eval images
         if step_check(step, self.config.steps_per_eval_all_images):
-            metrics_dict = self.pipeline.get_average_eval_image_metrics(step=step)
+            metrics_dict, dict_list = self.pipeline.get_average_eval_image_metrics(step=step)
             writer.put_dict(name="Eval Images Metrics Dict (all images)", scalar_dict=metrics_dict, step=step)
+            for i, d in enumerate(dict_list):
+                d['index'] = i
+                writer.put_dict(name="Eval Images Metrics Dict (all images) disaggregated", scalar_dict=d, step=step)
+            # If you uncomment the train code, make sure you remember that it now returns a 2-tuple like eval metrics!!!
             # metrics_dict2 = self.pipeline.get_average_train_image_metrics(step=step)
             # writer.put_dict(name="Eval Images Metrics Dict (all train images)", scalar_dict=metrics_dict2, step=step)

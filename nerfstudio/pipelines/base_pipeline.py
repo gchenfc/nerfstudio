@@ -349,10 +349,10 @@ class VanillaPipeline(Pipeline):
         metrics_dict = {}
         for key in metrics_dict_list[0].keys():
             metrics_dict[key] = float(
-                torch.mean(torch.tensor([metrics_dict[key] for metrics_dict in metrics_dict_list]))
+                torch.nanmean(torch.tensor([metrics_dict[key] for metrics_dict in metrics_dict_list]))
             )
         self.train()
-        return metrics_dict
+        return metrics_dict, metrics_dict_list
 
     @profiler.time_function
     def get_average_train_image_metrics(self, step: Optional[int] = None):
@@ -394,10 +394,10 @@ class VanillaPipeline(Pipeline):
         metrics_dict = {}
         for key in metrics_dict_list[0].keys():
             metrics_dict[key] = float(
-                torch.mean(torch.tensor([metrics_dict[key] for metrics_dict in metrics_dict_list]))
+                torch.nanmean(torch.tensor([metrics_dict[key] for metrics_dict in metrics_dict_list]))
             )
         self.train()
-        return metrics_dict
+        return metrics_dict, metrics_dict_list
 
     def load_pipeline(self, loaded_state: Dict[str, Any], step: int) -> None:
         """Load the checkpoint from the given path
