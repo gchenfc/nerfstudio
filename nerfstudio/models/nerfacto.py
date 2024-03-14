@@ -625,7 +625,24 @@ class NerfactoModel(Model):
                 outputs = super().get_outputs_for_camera_ray_bundle(camera_ray_bundle)
                 if 'image' not in outputs:
                     return outputs
-                outputs['rgb'] = self.hs2rgb(outputs['image'])
+                # print(outputs['image'].shape, outputs['image'].dtype, outputs['image'].device)
+
+
+                def hs2rgb(n_channel_im):
+                    # rgb_inds = [8, 18, 28, 38]
+                    # K = torch.Tensor([[0.7730080007942016, 0.535533997779176, 0.6526651958156037],
+                    #                 [1.414780009790509, 2.065529433404396, 3.0438870954713138],
+                    #                 [1.4773863942703649, -0.8240144016241694, 1.933859631365789],
+                    #                 [-0.34568228643051996, 0.7522634529835492, -1.6587064231164854],
+                    #                 [-12.904164189025236, 8.095959165877666, -23.779234868708237]]).to(device=hs_image.device)
+                    # rgb_inds = self.config.alt_rgb_output_channels
+                    K = torch.tensor(self.config.alt_rgb_K, device=n_channel_im.device)
+                    return (n_channel_im @ K[:-1, :] + K[-1] / 256.).clip(0, 1)
+
+                outputs['rgb'] = hs2rgb(outputs['image'])
+
+
+                # print(outputs['rgb'].shape, outputs['rgb'].dtype, outputs['rgb'].device)
                 # K = torch.tensor(self.config.alt_rgb_K, device=outputs['rgb'].device)
                 # outputs['rgb'] = (outputs['image'] @ K[:-1, :] + K[-1] / 256.).clip(0, 1)
                 return outputs
