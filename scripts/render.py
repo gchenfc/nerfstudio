@@ -53,6 +53,7 @@ def _render_trajectory_video(
     output_format: Literal["images", "video"] = "video",
     camera_type: CameraType = CameraType.PERSPECTIVE,
     force_color_channels: Optional[List[int]] = None,
+    force_background_color: Optional[List[float]] = None,
 ) -> None:
     """Helper function to create a video of the spiral trajectory.
 
@@ -119,8 +120,14 @@ def _render_trajectory_video(
                     ), torch.no_grad():
                         outputs = pipeline.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle, override_wavelengths=color_override)
                 else:
-                    with torch.no_grad():
-                        outputs = pipeline.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle, override_wavelengths=color_override)
+                    if force_background_color is not None:
+                        with renderers.background_color_override_context(
+                            torch.Tensor(force_background_color).to(pipeline.device)
+                        ), torch.no_grad():
+                            outputs = pipeline.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle, override_wavelengths=color_override)
+                    else:
+                        with torch.no_grad():
+                            outputs = pipeline.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle, override_wavelengths=color_override)
 
                 render_image = []
                 for rendered_output_name in rendered_output_names:
@@ -141,11 +148,16 @@ def _render_trajectory_video(
                         if false_color:
                             output_image = outputs['image'].cpu().numpy()
                             if output_image.shape[-1] == 128:
-                                output_image = output_image[:, :, force_color_channels]
-                            print(output_image.shape)
+                                if force_color_channels is not None:
+                                    output_image = output_image[:, :, force_color_channels]
+                                else:
+                                    channel = cameras.color_channels[camera_idx].item()
+                                    channel = int(channel)
+                                    output_image = output_image[:, :, [channel]]
+                            # print(output_image.shape)
                             cmap = matplotlib.cm.get_cmap('jet')
                             output_image = cmap(output_image)[:, :, :, :3]
-                            print(output_image.shape)
+                            # print(output_image.shape)
                             # output_image = output_image.reshape(800, 900, 4)[:, :, :3]
                             output_image = output_image.transpose(2, 0, 1, 3)
                             output_image = np.concatenate(output_image, axis = 1)
@@ -287,6 +299,8 @@ class RenderTrajectory:
 
     load_config: Path
     """Path to config YAML file."""
+    force_background_color: Optional[List[float]] = None
+    """Override the background color."""
     rendered_output_names: List[str] = field(default_factory=lambda: ["rgb"])
     """Name of the renderer outputs to use. rgb, depth, etc. concatenates them along y axis"""
     traj: Literal["spiral", "filename"] = "spiral"
@@ -353,6 +367,7 @@ class RenderTrajectory:
             output_format=self.output_format,
             camera_type=camera_type,
             force_color_channels=self.force_color_channels,
+            force_background_color=self.force_background_color,
         )
 
 
